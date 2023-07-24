@@ -49,7 +49,67 @@ mysql_secure_installation
 # Install PHPMyAdmin and configure for NGINX if applicable
 apt-get install phpmyadmin -y
 
-if [[ $web_server == 'nginx' ]]; then
+if [[ $web_server == 'apache' ]]; then
+    cat > /etc/apache2/conf-available/phpmyadmin.conf << EOF
+Alias /phpmyadmin /usr/share/phpmyadmin
+<Directory /usr/share/phpmyadmin>
+    Options FollowSymLinks
+    DirectoryIndex index.php
+
+    <IfModule mod_php5.c>
+        <IfModule mod_mime.c>
+            AddType application/x-httpd-php .php
+        </IfModule>
+        <FilesMatch ".+\.php$">
+            SetHandler application/x-httpd-php
+        </FilesMatch>
+
+        php_value include_path .
+        php_admin_value upload_tmp_dir /var/lib/phpmyadmin/tmp
+        php_admin_value open_basedir /usr/share/phpmyadmin/:/etc/phpmyadmin/:/var/lib/phpmyadmin/:/usr/share/php/php-gettext/:/usr/share/php/php-php-gettext/:/usr/share/javascript/:/usr/share/php/tcpdf/:/usr/share/doc/phpmyadmin/:/usr/share/php/phpseclib/
+        php_admin_value mbstring.func_overload 0
+    </IfModule>
+    <IfModule mod_php.c>
+        <IfModule mod_mime.c>
+            AddType application/x-httpd-php .php
+        </IfModule>
+        <FilesMatch ".+\.php$">
+            SetHandler application/x-httpd-php
+        </FilesMatch>
+
+        php_value include_path .
+        php_admin_value upload_tmp_dir /var/lib/phpmyadmin/tmp
+        php_admin_value open_basedir /usr/share/phpmyadmin/:/etc/phpmyadmin/:/var/lib/phpmyadmin/:/usr/share/php/php-gettext/:/usr/share/php/php-php-gettext/:/usr/share/javascript/:/usr/share/php/tcpdf/:/usr/share/doc/phpmyadmin/:/usr/share/php/phpseclib/
+        php_admin_value mbstring.func_overload 0
+    </IfModule>
+</Directory>
+
+# Authorize for setup
+<Directory /usr/share/phpmyadmin/setup>
+    <IfModule mod_authn_core.c>
+        <IfModule mod_authn_file.c>
+            AuthType Basic
+            AuthName "phpMyAdmin Setup"
+            AuthUserFile /etc/phpmyadmin/htpasswd.setup
+        </IfModule>
+    </IfModule>
+    Require valid-user
+</Directory>
+
+# Disallow web access to directories that don't need it
+<Directory /usr/share/phpmyadmin/templates>
+    Require all denied
+</Directory>
+<Directory /usr/share/phpmyadmin/libraries>
+    Require all denied
+</Directory>
+EOF
+    # Enable the phpMyAdmin configuration
+    a2enconf phpmyadmin
+
+    systemctl reload apache2
+
+elif [[ $web_server == 'nginx' ]]; then
     cat > /etc/nginx/snippets/phpmyadmin.conf << EOF
 location /phpmyadmin {
     root /usr/share/;
@@ -68,6 +128,10 @@ location /phpmyadmin {
     }
 }
 EOF
+
+    # Include the PHPMyAdmin configuration in the default Nginx site configuration
+     awk '/server \{/{c++;if(c==2){sub(/}/,"    include snippets/phpmyadmin.conf;\n}");c=0}}1' /etc/nginx/sites-available/default > temp && mv temp /etc/nginx/sites-available/default
+    
     systemctl reload nginx
 fi
 
