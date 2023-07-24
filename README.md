@@ -1,49 +1,58 @@
-# PHP Server Setup Script
+# Multi-PHP Installation Script
 
-This repository contains a Bash script for setting up a PHP development environment on Ubuntu or Debian systems. It also includes MariaDB and options for either Apache or Nginx web servers.
+This script automatically installs multiple versions of PHP and a chosen web server (Apache or NGINX) on Ubuntu or Debian systems. The script also installs and configures MariaDB, PHPMyAdmin, and sets up MySQL root with a random password.
 
-## Prerequisites
+## Requirements
 
-- You need root access to your server.
-- Your server must be running Ubuntu or Debian.
+* Ubuntu or Debian operating system.
+* Root user access.
 
-## Usage
+## How to use
 
-Clone this repository to your server using the command:
+1. Clone the repository:
 
-```
-https://github.com/ruban-s/server-setup.git
-```
-## Navigate to the repository and make the script executable:
+    ```bash
+    git clone https://github.com/ruban-s/server-setup.git
+    ```
 
-```
-cd server-setup
-chmod +x setup.sh
-```
+2. Navigate to the directory:
 
-## Run the script as root:
+    ```bash
+    cd server-setup
+    ```
 
-```
-sudo ./setup.sh
-```
+3. Give executable permissions to the script:
 
+    ```bash
+    chmod +x setup.sh
+    ```
 
-The script will guide you through the installation process, prompting you to select which versions of PHP to install, and whether to install Apache or Nginx.
+4. Run the script as root:
 
-## What the Script Does
+    ```bash
+    sudo ./setup.sh
+    ```
 
-1. Checks if your server's OS is either Ubuntu or Debian.
-2. Updates the system's package list and installs updates.
-3. Installs the PHP software repository.
-4. Installs the specified versions of PHP.
-5. Installs a set of common PHP extensions.
-6. Installs either Apache or Nginx based on your selection.
-7. Installs MariaDB and runs the mysql_secure_installation script.
-8. Installs PHPMyAdmin.
-9. Changes the MySQL root user's authentication method to 'mysql_native_password'.
-10. Generates a random password for the MySQL root user.
-11. Displays the MySQL root username and the generated password at the end.
+5. The script will prompt you to enter the PHP versions you want to install. Enter the versions, separated by a comma, for example:
 
-## Warning
+    ```bash
+    Enter PHP versions to install (separated by comma): 7.4,8.0
+    ```
 
-This script is intended for use in a new environment and not in a old environment.
+6. Then the script will ask you which web server to install: `apache` or `nginx`. Enter your choice:
+
+    ```bash
+    Enter the web server to install (apache or nginx): nginx
+    ```
+
+7. The script will then proceed to install the chosen PHP versions, the web server, MariaDB, and PHPMyAdmin. It will also set up MySQL root with a random password.
+
+## Note
+
+* Make sure to back up your configurations before running the script, as it may modify existing configurations.
+* This is a basic setup and the actual configuration may depend on your specific needs and environment. Always check the official PHP and MariaDB documentation for the latest configuration information.
+* This script should be run on a non-production environment first to ensure that it works as expected.
+
+## Support
+
+If you have any questions or run into any issues, please open an issue in this repository.
