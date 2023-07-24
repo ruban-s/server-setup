@@ -1,78 +1,79 @@
 #!/bin/bash
 
-# Check if the user is root
+# Ensure user is root
 if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root!"
-   exit 1
+   echo "This script must be run as root!" ; exit 1
 fi
 
-# Check the operating system
+# Confirm OS is Ubuntu or Debian
 os_name=$(lsb_release -is)
-
 if [[ $os_name != "Ubuntu" ]] && [[ $os_name != "Debian" ]]; then
-    echo "This script can only be run on Ubuntu or Debian!"
-    exit 1
+    echo "This script can only be run on Ubuntu or Debian!" ; exit 1
 fi
 
-# Update the system
-echo "Updating system..."
+# Update system and install PHP repository
 apt-get update && apt-get upgrade -y
-
-# Install the PHP repository
-echo "Installing PHP repository..."
 apt-get install software-properties-common -y
 add-apt-repository ppa:ondrej/php -y
 apt-get update
 
-# Ask for PHP versions to be installed
+echo "Available PHP versions:"
+apt-cache madison php | awk '{print $3}' | grep -Po '[0-9]\.[0-9]+' | sort -u
+
+# Ask for PHP versions to install and sort to get the highest
 read -p "Enter PHP versions to install (separated by comma): " php_versions
 IFS=',' read -ra versions <<< "$php_versions"
+IFS=$'\n' sorted_versions=($(sort -n <<<"${versions[*]}"))
+unset IFS
+highest_version=${sorted_versions[-1]}
 
-# Extensions to be installed
+# Install PHP versions and extensions
 extensions=("bcmath" "xml" "fpm" "mysql" "zip" "intl" "ldap" "gd" "cli" "bz2" "curl" "mbstring" "pgsql" "opcache" "soap" "cgi" "imap" "apcu" "xsl")
-
 for version in "${versions[@]}"; do
-    echo "Installing PHP ${version}..."
-    apt-get install "php${version}" -y
-
-    # Install the extensions
-    for extension in "${extensions[@]}"; do
-        echo "Installing PHP ${version} ${extension} extension..."
-        apt-get install "php${version}-${extension}" -y
-    done
+    apt-get install "php${version}" "php${version}-${extensions[@]}" -y
 done
 
-# Ask for web server to install
+# Ask for web server to install and handle installation
 read -p "Enter the web server to install (apache or nginx): " web_server
 web_server=${web_server,,}  # Convert to lowercase
-
 if [[ $web_server == 'apache' ]]; then
-    echo "Installing Apache..."
-    apt-get install apache2 -y
-    echo "Removing Nginx if installed..."
-    apt-get remove nginx -y
+    apt-get install apache2 -y && apt-get remove nginx -y
 elif [[ $web_server == 'nginx' ]]; then
-    echo "Installing Nginx..."
-    apt-get install nginx -y
-    echo "Removing Apache if installed..."
-    apt-get remove apache2 -y
+    apt-get install nginx -y && apt-get remove apache2 -y
 fi
 
-# Install MariaDB and auto-configure
-echo "Installing MariaDB..."
+# Install and configure MariaDB
 apt-get install mariadb-server -y
 mysql_secure_installation
 
-# Install PHPMyAdmin
-echo "Installing PHPMyAdmin..."
+# Install PHPMyAdmin and configure for NGINX if applicable
 apt-get install phpmyadmin -y
 
-# Generate random password
-password=$(openssl rand -base64 16)
-echo "Setting up MySQL root with native password auth and new password: ${password}"
+if [[ $web_server == 'nginx' ]]; then
+    cat > /etc/nginx/snippets/phpmyadmin.conf << EOF
+location /phpmyadmin {
+    root /usr/share/;
+    index index.php index.html index.htm;
+    location ~ ^/phpmyadmin/(.+\.php)$ {
+        try_files \$uri =404;
+        root /usr/share/;
+        fastcgi_pass unix:/run/php/php${highest_version}-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        include /etc/nginx/fastcgi_params;
+    }
 
-# Configure MySQL root with native password and new password
-mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${password}'; FLUSH PRIVILEGES;"
+    location ~* ^/phpmyadmin/(.+\.(jpg|jpeg|gif|css|png|js|ico|html|xml|txt))$ {
+        root /usr/share/;
+    }
+}
+EOF
+    systemctl reload nginx
+fi
+
+# Configure MySQL root with random password
+password=$(openssl rand -base64 16)
+mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${password}'; FLUSH PRIVILEGES;"
 
 echo "Installation completed!"
 echo "MySQL root username: root"
