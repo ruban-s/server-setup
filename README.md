@@ -4,7 +4,7 @@ This script automatically installs multiple versions of PHP and a chosen web ser
 
 ## Requirements
 
-* Ubuntu or Debian operating system.
+* Ubuntu, Debian, Mac operating system.
 * Root user access.
 
 ## How to use
@@ -24,7 +24,7 @@ This script automatically installs multiple versions of PHP and a chosen web ser
 3. Give executable permissions to the script:
 
     ```bash
-    chmod +x setup.sh
+    chmod -R 777 setup.sh
     ```
 
 4. Run the script as root:
@@ -33,19 +33,26 @@ This script automatically installs multiple versions of PHP and a chosen web ser
     sudo ./setup.sh
     ```
 
-5. The script will prompt you to enter the PHP versions you want to install. Enter the versions, separated by a comma, for example:
+    ### or Mac
+
+    ```bash
+    sudo ./setup-mac.sh
+    ```
+   
+
+6. The script will prompt you to enter the PHP versions you want to install. Enter the versions, separated by a comma, for example:
 
     ```bash
     Enter PHP versions to install (separated by comma): 7.4,8.0
     ```
 
-6. Then the script will ask you which web server to install: `apache` or `nginx`. Enter your choice:
+7. Then the script will ask you which web server to install: `apache` or `nginx`. Enter your choice:
 
     ```bash
     Enter the web server to install (apache or nginx): nginx
     ```
 
-7. The script will then proceed to install the chosen PHP versions, the web server, MariaDB, and PHPMyAdmin. It will also set up MySQL root with a random password.
+8. The script will then proceed to install the chosen PHP versions, the web server, MariaDB, and PHPMyAdmin. It will also set up MySQL root with a random password.
 
 ## Note
 
