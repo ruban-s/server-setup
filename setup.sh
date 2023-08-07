@@ -19,8 +19,10 @@ apt-get update
 
 # Available PHP versions
 available_versions=$(apt-cache pkgnames | grep -Po '^php[0-9]\.[0-9]+$' | sort -Vu)
-available_versions=${available_versions#php} # Strip "php" prefix
+echo "Available PHP versions (with 'php' prefix): $available_versions"
+available_versions=${available_versions//php/} # Remove "php" prefix
 echo "Available PHP versions: $available_versions"
+
 
 # Ask for PHP versions to install
 read -p "Enter PHP versions to install (separated by comma): " php_versions
