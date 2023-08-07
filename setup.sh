@@ -11,58 +11,79 @@ if [[ $os_name != "Ubuntu" ]] && [[ $os_name != "Debian" ]]; then
     echo "This script can only be run on Ubuntu or Debian!" ; exit 1
 fi
 
+# Check where to start based on flag files
+if [ -f "/var/tmp/php_installation_complete" ]; then
+    echo "Installation already completed."
+    exit 0
+elif [ -f "/var/tmp/php_web_server_installed" ]; then
+    echo "Web server already installed. Proceeding to MariaDB installation..."
+    goto_mariadb=true
+elif [ -f "/var/tmp/php_versions_installed" ]; then
+    echo "PHP versions already installed. Proceeding to web server installation..."
+    goto_webserver=true
+elif [ -f "/var/tmp/php_repository_added" ]; then
+    echo "PHP repository already added. Proceeding to PHP versions installation..."
+    goto_php_versions=true
+fi
+
 # Update system and install PHP repository
-apt-get update && apt-get upgrade -y
-apt-get install software-properties-common -y
-add-apt-repository ppa:ondrej/php -y
-apt-get update
+if [ ! "$goto_php_versions" ]; then
+    apt-get update && apt-get upgrade -y
+    apt-get install software-properties-common -y
+    add-apt-repository ppa:ondrej/php -y
+    apt-get update
+    touch /var/tmp/php_repository_added
+fi
 
 # Available PHP versions
 available_versions=$(apt-cache pkgnames | grep -Po '^php[0-9]\.[0-9]+$' | sort -Vu)
-echo "Available PHP versions (with 'php' prefix): $available_versions"
 available_versions=${available_versions//php/} # Remove "php" prefix
-echo "Available PHP versions: $available_versions"
-
 
 # Ask for PHP versions to install
-read -p "Enter PHP versions to install (separated by comma): " php_versions
-IFS=',' read -ra versions <<< "$php_versions"
-for version in "${versions[@]}"; do
-    if [[ ! " $available_versions " =~ " php$version " ]]; then
-        echo "Version $version is not available. Exiting..."
-        exit 1
-    fi
-done
-IFS=$'\n' sorted_versions=($(sort -V <<<"${versions[*]}"))
-unset IFS
-highest_version=${sorted_versions[-1]}
+if [ ! "$goto_php_versions" ]; then
+    read -p "Enter PHP versions to install (separated by comma): " php_versions
+    IFS=',' read -ra versions <<< "$php_versions"
+    for version in "${versions[@]}"; do
+        if [[ ! " $available_versions " =~ " $version " ]]; then
+            echo "Version $version is not available. Exiting..."
+            exit 1
+        fi
+    done
+    IFS=$'\n' sorted_versions=($(sort -V <<<"${versions[*]}"))
+    unset IFS
+    highest_version=${sorted_versions[-1]}
 
-# Install PHP versions and extensions
-extensions=("bcmath" "xml" "fpm" "mysql" "zip" "intl" "ldap" "gd" "cli" "bz2" "curl" "mbstring" "pgsql" "opcache" "soap" "cgi" "imap" "apcu" "xsl")
-for version in "${versions[@]}"; do
-    apt-get install "php${version}" $(printf "php${version}-%s " "${extensions[@]}") -y || {
-        echo "Failed to install PHP version $version. Exiting..."
-        exit 1
-    }
-done
+    # Install PHP versions and extensions
+    extensions=("bcmath" "xml" "fpm" "mysql" "zip" "intl" "ldap" "gd" "cli" "bz2" "curl" "mbstring" "pgsql" "opcache" "soap" "cgi" "imap" "apcu" "xsl")
+    for version in "${versions[@]}"; do
+        apt-get install "php${version}" $(printf "php${version}-%s " "${extensions[@]}") -y || {
+            echo "Failed to install PHP version $version. Exiting..."
+            exit 1
+        }
+    done
+    touch /var/tmp/php_versions_installed
+fi
 
 # Ask for web server to install and handle installation
-read -p "Enter the web server to install (apache or nginx): " web_server
-web_server=${web_server,,}  # Convert to lowercase
-if [[ $web_server == 'apache' ]]; then
-    apt-get install apache2 -y && apt-get remove nginx -y
-elif [[ $web_server == 'nginx' ]]; then
-    apt-get install nginx -y && apt-get remove apache2 -y
+if [ ! "$goto_webserver" ] && [ ! "$goto_php_versions" ]; then
+    read -p "Enter the web server to install (apache or nginx): " web_server
+    web_server=${web_server,,}  # Convert to lowercase
+    if [[ $web_server == 'apache' ]]; then
+        apt-get install apache2 -y && apt-get remove nginx -y
+    elif [[ $web_server == 'nginx' ]]; then
+        apt-get install nginx -y && apt-get remove apache2 -y
+    fi
+    touch /var/tmp/php_web_server_installed
 fi
 
 # Install and configure MariaDB
-apt-get install mariadb-server -y
-mysql_secure_installation
+if [ ! "$goto_mariadb" ] && [ ! "$goto_webserver" ] && [ ! "$goto_php_versions" ]; then
+    apt-get install mariadb-server -y
+    mysql_secure_installation
+    # Install PHPMyAdmin and configure for NGINX if applicable
+    apt-get install phpmyadmin -y
 
-# Install PHPMyAdmin and configure for NGINX if applicable
-apt-get install phpmyadmin -y
-
-if [[ $web_server == 'apache' ]]; then
+    if [[ $web_server == 'apache' ]]; then
     cat > /etc/apache2/conf-available/phpmyadmin.conf << EOF
 Alias /phpmyadmin /usr/share/phpmyadmin
 <Directory /usr/share/phpmyadmin>
@@ -151,6 +172,10 @@ fi
 # Configure MySQL root with random password
 password=$(openssl rand -base64 16)
 mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${password}'; FLUSH PRIVILEGES;"
+
+
+     touch /var/tmp/php_installation_complete
+fi
 
 echo "Installation completed!"
 echo "MySQL root username: root"
