@@ -17,21 +17,32 @@ apt-get install software-properties-common -y
 add-apt-repository ppa:ondrej/php -y
 apt-get update
 
-echo "Available PHP versions:"
-apt-cache madison php | awk '{print $3}' | grep -Po '[0-9]\.[0-9]+' | sort -u
+# Available PHP versions
+available_versions=$(apt-cache madison php | awk '{print $3}' | grep -Po '[0-9]\.[0-9]+' | sort -Vu)
+echo "Available PHP versions: $available_versions"
 
-# Ask for PHP versions to install and sort to get the highest
+# Ask for PHP versions to install
 read -p "Enter PHP versions to install (separated by comma): " php_versions
 IFS=',' read -ra versions <<< "$php_versions"
-IFS=$'\n' sorted_versions=($(sort -n <<<"${versions[*]}"))
+for version in "${versions[@]}"; do
+    if [[ ! " $available_versions " =~ " $version " ]]; then
+        echo "Version $version is not available. Exiting..."
+        exit 1
+    fi
+done
+IFS=$'\n' sorted_versions=($(sort -V <<<"${versions[*]}"))
 unset IFS
 highest_version=${sorted_versions[-1]}
 
 # Install PHP versions and extensions
 extensions=("bcmath" "xml" "fpm" "mysql" "zip" "intl" "ldap" "gd" "cli" "bz2" "curl" "mbstring" "pgsql" "opcache" "soap" "cgi" "imap" "apcu" "xsl")
 for version in "${versions[@]}"; do
-    apt-get install "php${version}" "php${version}-${extensions[@]}" -y
+    apt-get install "php${version}" $(printf "php${version}-%s " "${extensions[@]}") -y || {
+        echo "Failed to install PHP version $version. Exiting..."
+        exit 1
+    }
 done
+
 
 # Ask for web server to install and handle installation
 read -p "Enter the web server to install (apache or nginx): " web_server
