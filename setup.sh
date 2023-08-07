@@ -18,7 +18,7 @@ add-apt-repository ppa:ondrej/php -y
 apt-get update
 
 # Available PHP versions
-available_versions=$(apt-cache madison php | awk '{print $3}' | grep -Po '[0-9]\.[0-9]+' | sort -Vu)
+available_versions=$(apt-cache pkgnames | grep -Po '^php[0-9]\.[0-9]+$' | sort -Vu)
 echo "Available PHP versions: $available_versions"
 
 # Ask for PHP versions to install
