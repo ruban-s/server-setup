@@ -19,13 +19,14 @@ apt-get update
 
 # Available PHP versions
 available_versions=$(apt-cache pkgnames | grep -Po '^php[0-9]\.[0-9]+$' | sort -Vu)
+available_versions=${available_versions#php} # Strip "php" prefix
 echo "Available PHP versions: $available_versions"
 
 # Ask for PHP versions to install
 read -p "Enter PHP versions to install (separated by comma): " php_versions
 IFS=',' read -ra versions <<< "$php_versions"
 for version in "${versions[@]}"; do
-    if [[ ! " $available_versions " =~ " $version " ]]; then
+    if [[ ! " $available_versions " =~ " php$version " ]]; then
         echo "Version $version is not available. Exiting..."
         exit 1
     fi
@@ -42,7 +43,6 @@ for version in "${versions[@]}"; do
         exit 1
     }
 done
-
 
 # Ask for web server to install and handle installation
 read -p "Enter the web server to install (apache or nginx): " web_server
