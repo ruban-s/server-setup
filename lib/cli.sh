@@ -1,0 +1,97 @@
+#!/bin/bash
+# cli.sh — CLI argument parsing
+
+SS_CONFIG_FILE=""
+SS_NON_INTERACTIVE="${SS_NON_INTERACTIVE:-false}"
+SS_ACTION="install"  # install | uninstall | update
+
+show_help() {
+    cat <<'HELP'
+Usage: server-setup.sh [OPTIONS]
+
+A modular LAMP/LEMP stack installer for Ubuntu/Debian, RHEL/CentOS/Rocky/Fedora, and macOS.
+
+Options:
+  -c, --config FILE       Load configuration from FILE
+  -n, --non-interactive   Run without prompts (uses config/defaults)
+  -d, --dry-run           Show what would be done without executing
+  -v, --verbose           Enable debug-level logging
+  -q, --quiet             Suppress all output except errors
+  -u, --uninstall         Uninstall components (reads state file)
+      --update            Update installed components
+      --clear-state       Clear saved state and start fresh
+  -h, --help              Show this help message
+      --version           Show version information
+
+Examples:
+  sudo ./server-setup.sh                          Interactive install
+  sudo ./server-setup.sh --dry-run                Preview actions
+  sudo ./server-setup.sh -c config/example.conf   Install from config
+  sudo ./server-setup.sh --non-interactive         Use defaults
+  sudo ./server-setup.sh --uninstall               Remove components
+  sudo ./server-setup.sh --update                  Update components
+
+Configuration:
+  Place a config file at config/default.conf or pass one with -c.
+  Environment variables override config file values.
+  See config/example.conf for all available options.
+
+HELP
+}
+
+show_version() {
+    echo "server-setup ${SS_VERSION}"
+}
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -c|--config)
+                SS_CONFIG_FILE="$2"
+                shift 2
+                ;;
+            -n|--non-interactive)
+                SS_NON_INTERACTIVE="true"
+                shift
+                ;;
+            -d|--dry-run)
+                SS_DRY_RUN="true"
+                shift
+                ;;
+            -v|--verbose)
+                SS_VERBOSE="true"
+                SS_LOG_LEVEL="debug"
+                shift
+                ;;
+            -q|--quiet)
+                SS_QUIET="true"
+                shift
+                ;;
+            -u|--uninstall)
+                SS_ACTION="uninstall"
+                shift
+                ;;
+            --update)
+                SS_ACTION="update"
+                shift
+                ;;
+            --clear-state)
+                SS_ACTION="clear-state"
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            --version)
+                show_version
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                echo "Run with --help for usage information."
+                exit 1
+                ;;
+        esac
+    done
+}
