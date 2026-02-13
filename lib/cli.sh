@@ -3,7 +3,7 @@
 
 SS_CONFIG_FILE=""
 SS_NON_INTERACTIVE="${SS_NON_INTERACTIVE:-false}"
-SS_ACTION="install"  # install | uninstall | update
+SS_ACTION="install"  # install | uninstall | update | start | stop | restart
 
 show_help() {
     cat <<'HELP'
@@ -20,6 +20,10 @@ Options:
   -u, --uninstall         Uninstall components (reads state file)
       --update            Update installed components
       --clear-state       Clear saved state and start fresh
+      --docker            Use Docker Compose instead of native packages
+      --start             Start Docker Compose stack
+      --stop              Stop Docker Compose stack
+      --restart           Restart Docker Compose stack
   -h, --help              Show this help message
       --version           Show version information
 
@@ -31,9 +35,16 @@ Examples:
   sudo ./server-setup.sh --uninstall               Remove components
   sudo ./server-setup.sh --update                  Update components
 
+Docker:
+  sudo ./server-setup.sh --docker --non-interactive   Docker install
+  sudo ./server-setup.sh --start                      Start stack
+  sudo ./server-setup.sh --stop                       Stop stack
+  sudo ./server-setup.sh --restart                    Restart stack
+
 Configuration:
   Place a config file at config/default.conf or pass one with -c.
   Environment variables override config file values.
+  Set INSTALL_METHOD=docker or use --docker flag for Docker mode.
   See config/example.conf for all available options.
 
 HELP
@@ -73,6 +84,22 @@ parse_args() {
                 ;;
             --update)
                 SS_ACTION="update"
+                shift
+                ;;
+            --docker)
+                CFG_INSTALL_METHOD="docker"
+                shift
+                ;;
+            --start)
+                SS_ACTION="start"
+                shift
+                ;;
+            --stop)
+                SS_ACTION="stop"
+                shift
+                ;;
+            --restart)
+                SS_ACTION="restart"
                 shift
                 ;;
             --clear-state)
