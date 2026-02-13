@@ -16,6 +16,7 @@ CFG_INSTALL_REDIS="${INSTALL_REDIS:-}"
 CFG_INSTALL_NODEJS="${INSTALL_NODEJS:-}"
 CFG_NODEJS_VERSION="${NODEJS_VERSION:-}"
 CFG_INSTALL_ELASTICSEARCH="${INSTALL_ELASTICSEARCH:-}"
+CFG_INSTALL_METHOD="${INSTALL_METHOD:-}"
 
 load_config_file() {
     local file="$1"
@@ -53,6 +54,7 @@ load_config_file() {
             INSTALL_NODEJS)        CFG_INSTALL_NODEJS="$value" ;;
             NODEJS_VERSION)        CFG_NODEJS_VERSION="$value" ;;
             INSTALL_ELASTICSEARCH) CFG_INSTALL_ELASTICSEARCH="$value" ;;
+            INSTALL_METHOD)        CFG_INSTALL_METHOD="$value" ;;
             LOG_LEVEL)             SS_LOG_LEVEL="$value" ;;
             *)                     log_debug "Unknown config key: $key" ;;
         esac
@@ -88,6 +90,7 @@ apply_defaults() {
                 INSTALL_NODEJS)        [[ -z "$CFG_INSTALL_NODEJS" ]]        && CFG_INSTALL_NODEJS="$value" ;;
                 NODEJS_VERSION)        [[ -z "$CFG_NODEJS_VERSION" ]]        && CFG_NODEJS_VERSION="$value" ;;
                 INSTALL_ELASTICSEARCH) [[ -z "$CFG_INSTALL_ELASTICSEARCH" ]] && CFG_INSTALL_ELASTICSEARCH="$value" ;;
+                INSTALL_METHOD)        [[ -z "$CFG_INSTALL_METHOD" ]]        && CFG_INSTALL_METHOD="$value" ;;
                 LOG_LEVEL)             : ;; # already handled
             esac
         done < "$defaults_file"
@@ -110,6 +113,7 @@ apply_env_overrides() {
     [[ -n "${INSTALL_NODEJS:-}" ]]        && CFG_INSTALL_NODEJS="$INSTALL_NODEJS"        || true
     [[ -n "${NODEJS_VERSION:-}" ]]        && CFG_NODEJS_VERSION="$NODEJS_VERSION"        || true
     [[ -n "${INSTALL_ELASTICSEARCH:-}" ]] && CFG_INSTALL_ELASTICSEARCH="$INSTALL_ELASTICSEARCH" || true
+    [[ -n "${INSTALL_METHOD:-}" ]]        && CFG_INSTALL_METHOD="$INSTALL_METHOD"              || true
 }
 
 init_config() {
