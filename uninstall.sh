@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # uninstall.sh — Clean removal of installed components
-# Sourced by server-setup.sh when --uninstall is passed.
+# Sourced by servforge.sh when --uninstall is passed.
 
 run_uninstall() {
     local os="$1"
 
-    log_info "=== Uninstalling server-setup components ==="
+    log_info "=== Uninstalling servforge components ==="
 
     if [[ ! -f "$SS_STATE_FILE" ]]; then
         log_error "No state file found. Nothing to uninstall."
@@ -97,7 +97,7 @@ _uninstall_docker() {
 
 _backup_databases() {
     local os="$1"
-    local backup_dir="${HOME}/server-setup-backup-$(date +%Y%m%d_%H%M%S)"
+    local backup_dir="${HOME}/servforge-backup-$(date +%Y%m%d_%H%M%S)"
     mkdir -p "$backup_dir"
     log_info "Backing up databases to $backup_dir..."
 
@@ -173,7 +173,7 @@ _uninstall_ssl() {
         log_info "Removing certbot..."
         if [[ "$os" == "macos" ]]; then
             pkg_remove macos certbot
-            rm -f /Library/LaunchDaemons/com.server-setup.certbot-renew.plist
+            rm -f /Library/LaunchDaemons/com.servforge.certbot-renew.plist
         else
             snap remove certbot 2>/dev/null || pkg_remove linux certbot
         fi
@@ -185,7 +185,7 @@ _uninstall_firewall() {
     if step_completed "firewall"; then
         log_info "Resetting firewall..."
         if [[ "$os" == "macos" ]]; then
-            rm -f /etc/pf.anchors/server-setup
+            rm -f /etc/pf.anchors/servforge
         elif [[ "$SS_DISTRO_FAMILY" == "rhel" ]]; then
             # Reset firewalld to defaults
             run_cmd firewall-cmd --reload 2>/dev/null || true

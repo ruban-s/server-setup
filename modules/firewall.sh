@@ -89,10 +89,10 @@ _configure_pf_macos() {
         return 0
     fi
 
-    local anchor_file="/etc/pf.anchors/server-setup"
+    local anchor_file="/etc/pf.anchors/servforge"
 
     {
-        echo "# server-setup firewall rules"
+        echo "# servforge firewall rules"
         echo "# Generated on $(date)"
         echo ""
         echo "# Block all incoming by default"
@@ -107,9 +107,9 @@ _configure_pf_macos() {
         done
     } > "$anchor_file"
 
-    if ! grep -q "server-setup" /etc/pf.conf 2>/dev/null; then
-        echo 'anchor "server-setup"' >> /etc/pf.conf
-        echo 'load anchor "server-setup" from "/etc/pf.anchors/server-setup"' >> /etc/pf.conf
+    if ! grep -q "servforge" /etc/pf.conf 2>/dev/null; then
+        echo 'anchor "servforge"' >> /etc/pf.conf
+        echo 'load anchor "servforge" from "/etc/pf.anchors/servforge"' >> /etc/pf.conf
     fi
 
     run_cmd pfctl -f /etc/pf.conf 2>/dev/null || log_warn "Could not reload pf. You may need to enable it manually."

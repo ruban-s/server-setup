@@ -34,7 +34,7 @@ log_head() { echo -e "\n${CYAN}=== $* ===${RESET}"; }
 
 test_syntax() {
     log_head "Syntax Check"
-    local files=(server-setup.sh lib/*.sh modules/*.sh uninstall.sh update.sh)
+    local files=(servforge.sh lib/*.sh modules/*.sh uninstall.sh update.sh)
     for f in "${files[@]}"; do
         if bash -n "$f" 2>/dev/null; then
             log_pass "$f"
@@ -50,35 +50,35 @@ test_cli_flags() {
     log_head "CLI Flags"
 
     log_test "--help exits 0"
-    if bash server-setup.sh --help &>/dev/null; then
+    if bash servforge.sh --help &>/dev/null; then
         log_pass "--help"
     else
         log_fail "--help"
     fi
 
     log_test "--version exits 0"
-    if bash server-setup.sh --version &>/dev/null; then
+    if bash servforge.sh --version &>/dev/null; then
         log_pass "--version"
     else
         log_fail "--version"
     fi
 
     log_test "--help contains usage text"
-    if bash server-setup.sh --help 2>/dev/null | grep -q "Usage:"; then
+    if bash servforge.sh --help 2>/dev/null | grep -q "Usage:"; then
         log_pass "--help output"
     else
         log_fail "--help output"
     fi
 
     log_test "--version contains version number"
-    if bash server-setup.sh --version 2>/dev/null | grep -qE '^server-setup [0-9]+\.[0-9]+'; then
+    if bash servforge.sh --version 2>/dev/null | grep -qE '^servforge [0-9]+\.[0-9]+'; then
         log_pass "--version output"
     else
         log_fail "--version output"
     fi
 
     log_test "Unknown flag exits non-zero"
-    if bash server-setup.sh --bogus &>/dev/null; then
+    if bash servforge.sh --bogus &>/dev/null; then
         log_fail "unknown flag should fail"
     else
         log_pass "unknown flag rejected"
@@ -121,7 +121,7 @@ test_docker_cli() {
     log_head "Docker CLI"
 
     log_test "--docker flag accepted"
-    if bash server-setup.sh --docker --help &>/dev/null; then
+    if bash servforge.sh --docker --help &>/dev/null; then
         # --help exits before --docker takes effect, but verifies parsing
         log_pass "--docker flag parsed"
     else
@@ -129,14 +129,14 @@ test_docker_cli() {
     fi
 
     log_test "--help shows Docker section"
-    if bash server-setup.sh --help 2>/dev/null | grep -q "Docker:"; then
+    if bash servforge.sh --help 2>/dev/null | grep -q "Docker:"; then
         log_pass "--help Docker section"
     else
         log_fail "--help Docker section"
     fi
 
     log_test "--start flag accepted"
-    if bash server-setup.sh --help 2>/dev/null | grep -q "\-\-start"; then
+    if bash servforge.sh --help 2>/dev/null | grep -q "\-\-start"; then
         log_pass "--start in help"
     else
         log_fail "--start in help"
@@ -198,7 +198,7 @@ run_docker_test() {
     syntax_result=$(docker run --rm -v "${SCRIPT_DIR}:/app:ro" "$image" bash -c '
         cd /app
         failed=0
-        for f in server-setup.sh lib/*.sh modules/*.sh uninstall.sh update.sh; do
+        for f in servforge.sh lib/*.sh modules/*.sh uninstall.sh update.sh; do
             bash -n "$f" 2>&1 || { echo "SYNTAX FAIL: $f"; failed=1; }
         done
         exit $failed
@@ -212,7 +212,7 @@ run_docker_test() {
     # Test 2: --help and --version
     log_test "CLI flags inside $distro container"
     if docker run --rm -v "${SCRIPT_DIR}:/app:ro" "$image" bash -c '
-        cd /app && bash server-setup.sh --help >/dev/null && bash server-setup.sh --version >/dev/null
+        cd /app && bash servforge.sh --help >/dev/null && bash servforge.sh --version >/dev/null
     ' &>/dev/null; then
         log_pass "CLI flags ($distro)"
     else
@@ -225,7 +225,7 @@ run_docker_test() {
     dryrun_output=$(docker run --rm -v "${SCRIPT_DIR}:/app:ro" "$image" bash -c "
         ${setup}
         cd /app
-        bash server-setup.sh --dry-run --non-interactive --verbose 2>&1
+        bash servforge.sh --dry-run --non-interactive --verbose 2>&1
     " 2>&1)
     local dryrun_exit=$?
 
@@ -233,7 +233,7 @@ run_docker_test() {
         log_pass "Dry-run ($distro)"
     else
         # Check if it at least started correctly
-        if echo "$dryrun_output" | grep -q "server-setup v"; then
+        if echo "$dryrun_output" | grep -q "servforge v"; then
             if echo "$dryrun_output" | grep -q "DRY RUN"; then
                 log_pass "Dry-run ($distro) — started correctly (may have non-fatal issues)"
             else
@@ -278,21 +278,21 @@ test_local_dryrun() {
     fi
 
     log_test "Dry-run with defaults"
-    if bash server-setup.sh --dry-run --non-interactive --verbose 2>&1 | grep -q "DRY RUN"; then
+    if bash servforge.sh --dry-run --non-interactive --verbose 2>&1 | grep -q "DRY RUN"; then
         log_pass "Local dry-run"
     else
         log_fail "Local dry-run"
     fi
 
     log_test "Dry-run with config file"
-    if bash server-setup.sh --dry-run --config config/example.conf --non-interactive 2>&1 | grep -q "DRY RUN"; then
+    if bash servforge.sh --dry-run --config config/example.conf --non-interactive 2>&1 | grep -q "DRY RUN"; then
         log_pass "Local dry-run with config"
     else
         log_fail "Local dry-run with config"
     fi
 
     log_test "Clear state"
-    if bash server-setup.sh --clear-state 2>&1 | grep -q "cleared"; then
+    if bash servforge.sh --clear-state 2>&1 | grep -q "cleared"; then
         log_pass "Clear state"
     else
         log_fail "Clear state"

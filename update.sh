@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # update.sh — Update installed components
-# Sourced by server-setup.sh when --update is passed.
+# Sourced by servforge.sh when --update is passed.
 
 run_update() {
     local os="$1"
 
-    log_info "=== Updating server-setup components ==="
+    log_info "=== Updating servforge components ==="
 
     if [[ ! -f "$SS_STATE_FILE" ]]; then
         log_error "No state file found. Nothing to update."

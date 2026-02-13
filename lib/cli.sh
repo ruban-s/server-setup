@@ -7,7 +7,7 @@ SS_ACTION="install"  # install | uninstall | update | start | stop | restart
 
 show_help() {
     cat <<'HELP'
-Usage: server-setup.sh [OPTIONS]
+Usage: servforge.sh [OPTIONS]
 
 A modular LAMP/LEMP stack installer for Ubuntu/Debian, RHEL/CentOS/Rocky/Fedora, and macOS.
 
@@ -28,18 +28,18 @@ Options:
       --version           Show version information
 
 Examples:
-  sudo ./server-setup.sh                          Interactive install
-  sudo ./server-setup.sh --dry-run                Preview actions
-  sudo ./server-setup.sh -c config/example.conf   Install from config
-  sudo ./server-setup.sh --non-interactive         Use defaults
-  sudo ./server-setup.sh --uninstall               Remove components
-  sudo ./server-setup.sh --update                  Update components
+  sudo ./servforge.sh                          Interactive install
+  sudo ./servforge.sh --dry-run                Preview actions
+  sudo ./servforge.sh -c config/example.conf   Install from config
+  sudo ./servforge.sh --non-interactive         Use defaults
+  sudo ./servforge.sh --uninstall               Remove components
+  sudo ./servforge.sh --update                  Update components
 
 Docker:
-  sudo ./server-setup.sh --docker --non-interactive   Docker install
-  sudo ./server-setup.sh --start                      Start stack
-  sudo ./server-setup.sh --stop                       Stop stack
-  sudo ./server-setup.sh --restart                    Restart stack
+  sudo ./servforge.sh --docker --non-interactive   Docker install
+  sudo ./servforge.sh --start                      Start stack
+  sudo ./servforge.sh --stop                       Stop stack
+  sudo ./servforge.sh --restart                    Restart stack
 
 Configuration:
   Place a config file at config/default.conf or pass one with -c.
@@ -51,7 +51,7 @@ HELP
 }
 
 show_version() {
-    echo "server-setup ${SS_VERSION}"
+    echo "servforge ${SS_VERSION}"
 }
 
 parse_args() {

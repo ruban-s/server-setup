@@ -138,7 +138,7 @@ _setup_renewal_linux() {
 }
 
 _setup_renewal_macos() {
-    local plist_path="/Library/LaunchDaemons/com.server-setup.certbot-renew.plist"
+    local plist_path="/Library/LaunchDaemons/com.servforge.certbot-renew.plist"
     if [[ -f "$plist_path" ]]; then
         log_info "Certbot renewal launchd plist already exists."
         return 0
@@ -155,7 +155,7 @@ _setup_renewal_macos() {
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.server-setup.certbot-renew</string>
+    <string>com.servforge.certbot-renew</string>
     <key>ProgramArguments</key>
     <array>
         <string>/usr/local/bin/certbot</string>

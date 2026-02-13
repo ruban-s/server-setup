@@ -6,9 +6,9 @@ set -euo pipefail
 
 # Constants
 readonly SS_VERSION="2.0.0"
-readonly SS_STATE_DIR_LINUX="/var/tmp/server-setup"
-readonly SS_STATE_DIR_MAC="${HOME}/.server-setup"
-readonly SS_LOG_FILE="/var/log/server-setup.log"
+readonly SS_STATE_DIR_LINUX="/var/tmp/servforge"
+readonly SS_STATE_DIR_MAC="${HOME}/.servforge"
+readonly SS_LOG_FILE="/var/log/servforge.log"
 readonly SS_CREDENTIALS_FILE_NAME="credentials"
 
 # Globals (set during init)
