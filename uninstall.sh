@@ -12,6 +12,16 @@ run_uninstall() {
         exit 1
     fi
 
+    # Check if this was a Docker installation
+    local install_method
+    install_method=$(load_state "install_method")
+    if [[ "$install_method" == "docker" ]]; then
+        _uninstall_docker
+        clear_state
+        log_success "Uninstall complete."
+        return
+    fi
+
     # Show what's installed
     echo ""
     log_info "Installed components (from state file):"
@@ -57,6 +67,32 @@ run_uninstall() {
     # Clear state
     clear_state
     log_success "Uninstall complete."
+}
+
+_uninstall_docker() {
+    local docker_dir
+    docker_dir=$(load_state "docker_output_dir")
+    if [[ -z "$docker_dir" ]]; then
+        docker_dir="${SCRIPT_DIR}/docker-output"
+    fi
+
+    log_info "Removing Docker Compose stack..."
+
+    if [[ -f "${docker_dir}/docker-compose.yml" ]]; then
+        if [[ "$SS_NON_INTERACTIVE" != "true" ]]; then
+            read -rp "This will stop all containers and remove volumes. Proceed? (yes/no): " confirm
+            if [[ "${confirm,,}" != "yes" && "${confirm,,}" != "y" ]]; then
+                log_info "Uninstall cancelled."
+                exit 0
+            fi
+        fi
+
+        run_cmd docker compose -f "${docker_dir}/docker-compose.yml" down -v --remove-orphans
+        run_cmd rm -rf "$docker_dir"
+        log_success "Docker stack and generated files removed."
+    else
+        log_warn "No docker-compose.yml found at ${docker_dir}. Cleaning up state only."
+    fi
 }
 
 _backup_databases() {

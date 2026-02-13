@@ -12,6 +12,14 @@ run_update() {
         exit 1
     fi
 
+    # Check if this was a Docker installation
+    local install_method
+    install_method=$(load_state "install_method")
+    if [[ "$install_method" == "docker" ]]; then
+        _update_docker
+        return
+    fi
+
     # Update system packages first
     log_info "Updating system packages..."
     pkg_update "$os"
@@ -137,4 +145,35 @@ run_update() {
 
     echo ""
     log_success "Update complete."
+}
+
+_update_docker() {
+    local docker_dir
+    docker_dir=$(load_state "docker_output_dir")
+    if [[ -z "$docker_dir" ]]; then
+        docker_dir="${SCRIPT_DIR}/docker-output"
+    fi
+
+    if [[ ! -f "${docker_dir}/docker-compose.yml" ]]; then
+        log_error "No docker-compose.yml found. Nothing to update."
+        exit 1
+    fi
+
+    local compose_file="${docker_dir}/docker-compose.yml"
+    local env_file="${docker_dir}/.env"
+
+    log_info "Pulling latest Docker images..."
+    run_cmd docker compose -f "$compose_file" --env-file "$env_file" pull
+
+    log_info "Recreating containers with updated images..."
+    run_cmd docker compose -f "$compose_file" --env-file "$env_file" up -d --build
+
+    if [[ "$SS_DRY_RUN" != "true" ]]; then
+        echo ""
+        log_info "Service status:"
+        docker compose -f "$compose_file" ps 2>/dev/null || true
+    fi
+
+    echo ""
+    log_success "Docker stack updated."
 }

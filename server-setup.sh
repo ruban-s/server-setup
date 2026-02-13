@@ -22,6 +22,7 @@ source "${SCRIPT_DIR}/modules/firewall.sh"
 source "${SCRIPT_DIR}/modules/ssl.sh"
 source "${SCRIPT_DIR}/modules/extras.sh"
 source "${SCRIPT_DIR}/modules/vhost.sh"
+source "${SCRIPT_DIR}/modules/docker.sh"
 
 # --- Main ---
 
@@ -57,8 +58,17 @@ main() {
     log_info "Platform: ${os} (${arch})"
     [[ "$SS_DRY_RUN" == "true" ]] && log_warn "DRY RUN MODE — no changes will be made."
 
+    # Docker lifecycle actions don't need platform setup
+    if [[ "$SS_ACTION" == "start" || "$SS_ACTION" == "stop" || "$SS_ACTION" == "restart" ]]; then
+        docker_lifecycle "$SS_ACTION"
+        exit 0
+    fi
+
     # Platform-specific prerequisites
-    if [[ "$os" == "linux" ]]; then
+    if [[ "${CFG_INSTALL_METHOD,,}" == "docker" ]]; then
+        # Docker mode only needs minimal platform detection
+        log_info "Install method: Docker"
+    elif [[ "$os" == "linux" ]]; then
         check_root
         check_linux_distro  # sets SS_DISTRO_FAMILY
         local distro
@@ -97,6 +107,11 @@ _run_install() {
     local os="$1"
 
     log_info "Starting installation..."
+
+    if [[ "${CFG_INSTALL_METHOD,,}" == "docker" ]]; then
+        install_docker_stack
+        return
+    fi
 
     # Core stack
     install_php "$os"

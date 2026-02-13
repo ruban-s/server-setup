@@ -105,7 +105,7 @@ test_config() {
     fi
 
     log_test "default.conf has required keys"
-    local required_keys=("PHP_VERSIONS" "WEB_SERVER" "INSTALL_PHPMYADMIN" "ENABLE_FIREWALL")
+    local required_keys=("PHP_VERSIONS" "WEB_SERVER" "INSTALL_PHPMYADMIN" "ENABLE_FIREWALL" "INSTALL_METHOD")
     for key in "${required_keys[@]}"; do
         if grep -q "^${key}=" config/default.conf; then
             log_pass "default.conf has $key"
@@ -113,6 +113,34 @@ test_config() {
             log_fail "default.conf missing $key"
         fi
     done
+}
+
+# --- Docker Mode Tests ---
+
+test_docker_cli() {
+    log_head "Docker CLI"
+
+    log_test "--docker flag accepted"
+    if bash server-setup.sh --docker --help &>/dev/null; then
+        # --help exits before --docker takes effect, but verifies parsing
+        log_pass "--docker flag parsed"
+    else
+        log_fail "--docker flag parsing"
+    fi
+
+    log_test "--help shows Docker section"
+    if bash server-setup.sh --help 2>/dev/null | grep -q "Docker:"; then
+        log_pass "--help Docker section"
+    else
+        log_fail "--help Docker section"
+    fi
+
+    log_test "--start flag accepted"
+    if bash server-setup.sh --help 2>/dev/null | grep -q "\-\-start"; then
+        log_pass "--start in help"
+    else
+        log_fail "--start in help"
+    fi
 }
 
 # --- Docker Tests ---
@@ -306,10 +334,14 @@ main() {
         config)
             test_config
             ;;
+        docker)
+            test_docker_cli
+            ;;
         local)
             test_syntax
             test_cli_flags
             test_config
+            test_docker_cli
             test_local_dryrun
             ;;
         ubuntu|debian|rocky|alma|fedora)
@@ -320,6 +352,7 @@ main() {
             test_syntax
             test_cli_flags
             test_config
+            test_docker_cli
 
             if check_docker 2>/dev/null; then
                 for distro in ubuntu debian rocky alma fedora; do
@@ -330,7 +363,7 @@ main() {
             fi
             ;;
         *)
-            echo "Usage: $0 [syntax|cli|config|local|ubuntu|debian|rocky|alma|fedora|all]"
+            echo "Usage: $0 [syntax|cli|config|docker|local|ubuntu|debian|rocky|alma|fedora|all]"
             exit 1
             ;;
     esac
