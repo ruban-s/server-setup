@@ -1,282 +1,466 @@
 # server-setup
 
-A modular LAMP/LEMP stack installer for **Ubuntu/Debian**, **RHEL/CentOS/Rocky/AlmaLinux/Fedora**, and **macOS**. Choose between native package installation or **Docker Compose** — with resumable state, secure credential handling, and a full CLI.
+A modular LAMP/LEMP stack installer for **Ubuntu/Debian**, **RHEL/CentOS/Rocky/AlmaLinux/Fedora**, and **macOS**.
 
-## Features
+Two installation methods:
+- **Native** — installs packages directly on the host (apt, dnf/yum, Homebrew)
+- **Docker** — generates a Docker Compose stack, nothing installed on the host
 
-- **Multi-platform**: Ubuntu/Debian (apt), RHEL/CentOS/Rocky/AlmaLinux/Fedora (dnf/yum), and macOS (Homebrew)
-- **Docker mode**: Generate a complete Docker Compose stack instead of installing packages on the host
-- **Multi-PHP**: Install multiple PHP versions side-by-side with extensions
-- **Resumable**: Interrupted? Re-run and it picks up where it left off
-- **Secure**: Passwords saved to permission-restricted files, never exposed in process lists
-- **Configurable**: Config files, environment variables, or interactive prompts
-- **Dry-run mode**: Preview all actions before executing
-- **Full lifecycle**: Install, uninstall, update, start, stop, restart
+---
 
-## Quick Start
+## Table of Contents
 
-### Native Install
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Installation Methods](#installation-methods)
+  - [Native Install](#native-install)
+  - [Docker Install](#docker-install)
+- [CLI Reference](#cli-reference)
+- [Configuration](#configuration)
+  - [Configuration Options](#configuration-options)
+  - [How Configuration Works](#how-configuration-works)
+- [Managing Your Stack](#managing-your-stack)
+  - [Update](#update)
+  - [Uninstall](#uninstall)
+  - [Docker Lifecycle](#docker-lifecycle)
+- [Docker Mode Details](#docker-mode-details)
+  - [Generated Files](#generated-files)
+  - [Services](#services)
+  - [Ports](#ports)
+- [Credentials & State](#credentials--state)
+- [Supported Platforms](#supported-platforms)
+- [Testing](#testing)
+- [Project Structure](#project-structure)
+
+---
+
+## Requirements
+
+### Native mode
+
+| Requirement | Details |
+|-------------|---------|
+| OS | Ubuntu, Debian, CentOS, RHEL, Rocky Linux, AlmaLinux, Fedora, or macOS |
+| Shell | `bash` 4.0+ |
+| Tools | `curl`, `openssl` |
+| Access | Root / sudo (Linux), admin (macOS) |
+
+### Docker mode
+
+| Requirement | Details |
+|-------------|---------|
+| OS | Any platform that runs Docker |
+| Docker | Docker Engine 20.10+ |
+| Compose | Docker Compose v2 (`docker compose` plugin) |
+
+---
+
+## Getting Started
 
 ```bash
 git clone https://github.com/ruban-s/server-setup.git
 cd server-setup
 chmod +x server-setup.sh
+```
+
+Preview what would happen before committing:
+
+```bash
+sudo ./server-setup.sh --dry-run
+```
+
+---
+
+## Installation Methods
+
+### Native Install
+
+Installs PHP, web server, MariaDB, and extras directly on the host using the system package manager.
+
+**Interactive** (the script asks you questions):
+
+```bash
 sudo ./server-setup.sh
 ```
 
-The script will interactively ask for PHP versions and web server choice.
+**Non-interactive** (uses defaults or your config file):
+
+```bash
+sudo ./server-setup.sh --non-interactive
+```
+
+**With a config file**:
+
+```bash
+cp config/example.conf my-config.conf
+# Edit my-config.conf to your needs
+sudo ./server-setup.sh --config my-config.conf --non-interactive
+```
+
+**With environment variables**:
+
+```bash
+PHP_VERSIONS="8.2,8.3" WEB_SERVER="apache" sudo ./server-setup.sh -n
+```
 
 ### Docker Install
+
+Generates a complete `docker-compose.yml` with all services and starts the stack. No packages are installed on the host.
+
+**Quick start with defaults** (NGINX + PHP 8.3 + MariaDB + phpMyAdmin):
 
 ```bash
 sudo ./server-setup.sh --docker --non-interactive
 ```
 
-This generates a complete `docker-compose.yml` stack in `./docker-output/` and starts it.
+**With extras**:
 
-## Usage
+```bash
+INSTALL_REDIS=yes INSTALL_ELASTICSEARCH=yes sudo ./server-setup.sh --docker -n
+```
+
+**With a config file**:
+
+```bash
+sudo ./server-setup.sh --docker --config my-config.conf --non-interactive
+```
+
+**Preview without running**:
+
+```bash
+sudo ./server-setup.sh --docker --dry-run --non-interactive
+```
+
+After install, your stack is running. Verify with:
+
+```bash
+curl http://localhost        # Web server
+curl http://localhost:8080   # phpMyAdmin
+```
+
+---
+
+## CLI Reference
 
 ```
 sudo ./server-setup.sh [OPTIONS]
-
-Options:
-  -c, --config FILE       Load configuration from FILE
-  -n, --non-interactive   Run without prompts (uses config/defaults)
-  -d, --dry-run           Show what would be done without executing
-  -v, --verbose           Enable debug-level logging
-  -q, --quiet             Suppress all output except errors
-  -u, --uninstall         Uninstall components (reads state file)
-      --update            Update installed components
-      --clear-state       Clear saved state and start fresh
-      --docker            Use Docker Compose instead of native packages
-      --start             Start Docker Compose stack
-      --stop              Stop Docker Compose stack
-      --restart           Restart Docker Compose stack
-  -h, --help              Show help message
-      --version           Show version
 ```
 
-## Examples
+### General Options
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--help` | `-h` | Show help message and exit |
+| `--version` | | Show version and exit |
+| `--config FILE` | `-c` | Load configuration from FILE |
+| `--non-interactive` | `-n` | Run without prompts, use config/defaults |
+| `--dry-run` | `-d` | Preview actions without executing anything |
+| `--verbose` | `-v` | Enable debug-level logging |
+| `--quiet` | `-q` | Suppress all output except errors |
+
+### Actions
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| *(default)* | | Install the stack |
+| `--uninstall` | `-u` | Remove all installed components |
+| `--update` | | Update installed components to latest |
+| `--clear-state` | | Clear saved state and start fresh |
+
+### Docker Options
+
+| Flag | Description |
+|------|-------------|
+| `--docker` | Use Docker Compose instead of native packages |
+| `--start` | Start the Docker Compose stack |
+| `--stop` | Stop the Docker Compose stack |
+| `--restart` | Restart the Docker Compose stack |
+
+---
+
+## Configuration
+
+### Configuration Options
+
+Options can be set in a config file, as environment variables, or through interactive prompts.
+
+#### Installation
+
+| Option | Default | Values | Description |
+|--------|---------|--------|-------------|
+| `INSTALL_METHOD` | `native` | `native`, `docker` | Installation method (or use `--docker` flag) |
+
+#### Core Stack
+
+| Option | Default | Values | Description |
+|--------|---------|--------|-------------|
+| `PHP_VERSIONS` | `8.3` | e.g. `8.2,8.3` | PHP versions to install (comma-separated) |
+| `PHP_EXTENSIONS` | `bcmath,xml,fpm,...` | comma-separated | PHP extensions for each version |
+| `WEB_SERVER` | `nginx` | `nginx`, `apache` | Which web server to use |
+| `INSTALL_PHPMYADMIN` | `yes` | `yes`, `no` | Install phpMyAdmin web UI for MariaDB |
+
+#### SSL & Security (native mode only)
+
+| Option | Default | Values | Description |
+|--------|---------|--------|-------------|
+| `ENABLE_SSL` | `no` | `yes`, `no` | Enable SSL via Let's Encrypt |
+| `SSL_EMAIL` | *(empty)* | email address | Email for Let's Encrypt notifications |
+| `SSL_DOMAINS` | *(empty)* | e.g. `example.com,www.example.com` | Domains for SSL certificates |
+| `ENABLE_FIREWALL` | `yes` | `yes`, `no` | Configure firewall rules |
+| `FIREWALL_PORTS` | `22,80,443` | comma-separated | Ports to allow through firewall |
+
+#### Optional Extras
+
+| Option | Default | Values | Description |
+|--------|---------|--------|-------------|
+| `INSTALL_COMPOSER` | `yes` | `yes`, `no` | PHP dependency manager |
+| `INSTALL_REDIS` | `no` | `yes`, `no` | In-memory data store |
+| `INSTALL_NODEJS` | `no` | `yes`, `no` | Node.js runtime |
+| `NODEJS_VERSION` | `20` | major version number | Node.js version (e.g. `18`, `20`, `22`) |
+| `INSTALL_ELASTICSEARCH` | `no` | `yes`, `no` | Search and analytics engine |
+
+#### Logging
+
+| Option | Default | Values | Description |
+|--------|---------|--------|-------------|
+| `LOG_LEVEL` | `info` | `error`, `warn`, `info`, `debug` | Log verbosity |
+
+### How Configuration Works
+
+Settings are applied in this priority order (highest wins):
+
+```
+Environment variables  >  Config file (--config)  >  Defaults (config/default.conf)
+```
+
+**Three ways to configure:**
+
+1. **Config file** — copy the template and edit it:
+   ```bash
+   cp config/example.conf my-config.conf
+   sudo ./server-setup.sh --config my-config.conf -n
+   ```
+
+2. **Environment variables** — override any option inline:
+   ```bash
+   PHP_VERSIONS="8.2,8.3" WEB_SERVER="apache" sudo ./server-setup.sh -n
+   ```
+
+3. **Interactive prompts** — run without `-n` and the script asks you:
+   ```bash
+   sudo ./server-setup.sh
+   ```
+
+---
+
+## Managing Your Stack
+
+### Update
+
+Updates all installed components to their latest versions.
 
 ```bash
-# Interactive native install
-sudo ./server-setup.sh
-
-# Preview what would happen
-sudo ./server-setup.sh --dry-run
-
-# Install from a config file, no prompts
-sudo ./server-setup.sh --config config/example.conf --non-interactive
-
-# Use environment variables
-PHP_VERSIONS="8.2,8.3" WEB_SERVER="nginx" sudo ./server-setup.sh -n
-
-# Docker install with custom config
-sudo ./server-setup.sh --docker --config my-config.conf --non-interactive
-
-# Docker install with extras
-INSTALL_REDIS=yes INSTALL_ELASTICSEARCH=yes sudo ./server-setup.sh --docker -n
-
-# Manage Docker stack
-sudo ./server-setup.sh --start
-sudo ./server-setup.sh --stop
-sudo ./server-setup.sh --restart
-
-# Uninstall (works for both native and Docker)
-sudo ./server-setup.sh --uninstall
-
-# Update installed components / pull latest images
+# Native: upgrades packages via apt/dnf/brew
 sudo ./server-setup.sh --update
 
-# Verbose dry-run
-sudo ./server-setup.sh --docker --dry-run --verbose --non-interactive
+# Docker: pulls latest images and rebuilds containers
+sudo ./server-setup.sh --update
 ```
 
-## Docker Mode
+### Uninstall
 
-When you pass `--docker` (or set `INSTALL_METHOD=docker`), the script generates a production-ready Docker Compose setup instead of installing packages on the host.
+Removes everything that was installed, guided by the saved state file.
 
-### What Gets Generated
+```bash
+# Native: removes packages in reverse order, offers database backup
+sudo ./server-setup.sh --uninstall
+
+# Docker: stops containers, removes volumes, deletes generated files
+sudo ./server-setup.sh --uninstall
+```
+
+The script auto-detects whether native or Docker was used. No extra flags needed.
+
+### Docker Lifecycle
+
+Control your Docker Compose stack after installation:
+
+```bash
+sudo ./server-setup.sh --start     # Start all containers
+sudo ./server-setup.sh --stop      # Stop all containers
+sudo ./server-setup.sh --restart   # Restart all containers
+```
+
+---
+
+## Docker Mode Details
+
+### Generated Files
+
+When you run with `--docker`, the script creates a `docker-output/` directory:
 
 ```
 docker-output/
-├── docker-compose.yml         # All services with health checks
-├── .env                       # Passwords, versions, ports (chmod 600)
+├── docker-compose.yml              # Service definitions with health checks
+├── .env                            # Passwords, versions, ports (chmod 600)
 ├── php/
-│   └── Dockerfile.X.Y         # Custom PHP-FPM image per version
-├── nginx/
-│   └── default.conf           # NGINX config (if nginx selected)
-├── apache/
-│   └── httpd-vhost.conf       # Apache config (if apache selected)
+│   └── Dockerfile.8.3              # Custom PHP-FPM image (one per version)
+├── nginx/                          # Only if WEB_SERVER=nginx
+│   └── default.conf
+├── apache/                         # Only if WEB_SERVER=apache
+│   └── httpd-vhost.conf
 ├── config/
-│   └── phpmyadmin.config.inc.php
+│   └── phpmyadmin.config.inc.php   # Only if INSTALL_PHPMYADMIN=yes
 └── html/
-    └── index.php              # Default phpinfo page
+    └── index.php                   # Default phpinfo page
 ```
 
 ### Services
 
-| Service | Image | Condition |
-|---------|-------|-----------|
-| PHP-FPM | Custom build (php:X.Y-fpm) | Always |
-| NGINX | nginx:alpine | `WEB_SERVER=nginx` |
-| Apache | httpd:alpine | `WEB_SERVER=apache` |
-| MariaDB | mariadb:latest | Always |
-| phpMyAdmin | phpmyadmin/phpmyadmin | `INSTALL_PHPMYADMIN=yes` |
-| Redis | redis:alpine | `INSTALL_REDIS=yes` |
-| Elasticsearch | elasticsearch:8 | `INSTALL_ELASTICSEARCH=yes` |
-| Node.js | node:X-alpine | `INSTALL_NODEJS=yes` |
+All services are conditional based on your configuration:
 
-### Default Ports
+| Service | Image | When included |
+|---------|-------|---------------|
+| PHP-FPM | `php:X.Y-fpm` (custom build) | Always (one per PHP version) |
+| NGINX | `nginx:alpine` | `WEB_SERVER=nginx` |
+| Apache | `httpd:alpine` | `WEB_SERVER=apache` |
+| MariaDB | `mariadb:latest` | Always |
+| phpMyAdmin | `phpmyadmin/phpmyadmin` | `INSTALL_PHPMYADMIN=yes` |
+| Redis | `redis:alpine` | `INSTALL_REDIS=yes` |
+| Elasticsearch | `elasticsearch:8` | `INSTALL_ELASTICSEARCH=yes` |
+| Node.js | `node:X-alpine` | `INSTALL_NODEJS=yes` |
 
-| Service | Port |
-|---------|------|
-| HTTP | 80 |
-| HTTPS | 443 |
-| phpMyAdmin | 8080 |
-| MariaDB | 3306 |
-| Redis | 6379 |
-| Elasticsearch | 9200 |
-| Node.js | 3000 |
+### Ports
 
-Ports are configurable via the `.env` file after generation.
+Default port mappings (editable in `docker-output/.env` after generation):
 
-### Lifecycle Management
+| Service | Host Port | Container Port |
+|---------|-----------|----------------|
+| HTTP (NGINX/Apache) | 80 | 80 |
+| HTTPS | 443 | 443 |
+| phpMyAdmin | 8080 | 80 |
+| MariaDB | 3306 | 3306 |
+| Redis | 6379 | 6379 |
+| Elasticsearch | 9200 | 9200 |
+| Node.js | 3000 | 3000 |
 
-```bash
-sudo ./server-setup.sh --start     # docker compose up -d
-sudo ./server-setup.sh --stop      # docker compose down
-sudo ./server-setup.sh --restart   # docker compose restart
-sudo ./server-setup.sh --update    # docker compose pull && up -d --build
-sudo ./server-setup.sh --uninstall # docker compose down -v + remove files
-```
+---
 
-## Configuration
+## Credentials & State
 
-Configuration is resolved in order of priority (highest first):
+### Credentials
 
-1. **Environment variables** — e.g., `PHP_VERSIONS="8.3" sudo ./server-setup.sh`
-2. **Config file** — passed with `--config`
-3. **Defaults** — from `config/default.conf`
+Auto-generated passwords are saved to a permission-restricted file (chmod 600):
 
-Copy the example config to get started:
+| Mode | Location |
+|------|----------|
+| Native (Linux) | `/var/tmp/server-setup/credentials` |
+| Native (macOS) | `~/.server-setup/credentials` |
+| Docker | Above + `docker-output/.env` |
 
-```bash
-cp config/example.conf my-config.conf
-# Edit my-config.conf, then:
-sudo ./server-setup.sh --config my-config.conf --non-interactive
-```
-
-### Available Options
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `INSTALL_METHOD` | `native` | `native` (system packages) or `docker` (Docker Compose) |
-| `PHP_VERSIONS` | `8.3` | Comma-separated PHP versions |
-| `PHP_EXTENSIONS` | `bcmath,xml,fpm,...` | Extensions per PHP version |
-| `WEB_SERVER` | `nginx` | `apache` or `nginx` |
-| `INSTALL_PHPMYADMIN` | `yes` | Install phpMyAdmin |
-| `ENABLE_SSL` | `no` | SSL via Let's Encrypt (native mode) |
-| `SSL_EMAIL` | | Email for Let's Encrypt |
-| `SSL_DOMAINS` | | Comma-separated domains |
-| `ENABLE_FIREWALL` | `yes` | Configure firewall (native mode) |
-| `FIREWALL_PORTS` | `22,80,443` | Ports to allow |
-| `INSTALL_COMPOSER` | `yes` | Install Composer |
-| `INSTALL_REDIS` | `no` | Install Redis |
-| `INSTALL_NODEJS` | `no` | Install Node.js |
-| `NODEJS_VERSION` | `20` | Node.js major version |
-| `INSTALL_ELASTICSEARCH` | `no` | Install Elasticsearch |
-| `LOG_LEVEL` | `info` | `error`, `warn`, `info`, `debug` |
-
-## Credentials
-
-MariaDB root password and other secrets are stored in a permission-restricted file:
-
-- **Linux**: `/var/tmp/server-setup/credentials`
-- **macOS**: `~/.server-setup/credentials`
-- **Docker mode**: Also written to `docker-output/.env` (chmod 600)
+View your credentials:
 
 ```bash
 sudo cat /var/tmp/server-setup/credentials   # Linux
 cat ~/.server-setup/credentials               # macOS
 ```
 
-## State & Resumption
+### State
 
-Installation progress is tracked in a state file. If the script is interrupted, re-run it and it will skip completed steps.
+Installation progress is tracked so interrupted installs can resume where they left off:
 
-- **Linux**: `/var/tmp/server-setup/state`
-- **macOS**: `~/.server-setup/state`
-
-To start fresh: `sudo ./server-setup.sh --clear-state`
-
-## Project Structure
-
-```
-server-setup/
-├── server-setup.sh          # Main entry point
-├── config/
-│   ├── default.conf         # Default config values
-│   └── example.conf         # Documented user config template
-├── lib/
-│   ├── common.sh            # Logging, traps, validation, state mgmt
-│   ├── platform.sh          # OS/arch detection, package wrappers
-│   ├── config.sh            # Config file parsing + env overrides
-│   └── cli.sh               # CLI argument parsing
-├── modules/
-│   ├── php.sh               # Multi-version PHP + extensions
-│   ├── webserver.sh         # Apache/NGINX install + config
-│   ├── database.sh          # MariaDB install + secure setup
-│   ├── phpmyadmin.sh        # phpMyAdmin download + config
-│   ├── ssl.sh               # Let's Encrypt via certbot
-│   ├── firewall.sh          # ufw / firewalld / pf
-│   ├── extras.sh            # Composer, Redis, Node.js, Elasticsearch
-│   ├── vhost.sh             # Virtual host creation wizard
-│   └── docker.sh            # Docker Compose stack generation
-├── uninstall.sh             # Component removal (native + Docker)
-├── update.sh                # Component updates (native + Docker)
-├── test.sh                  # Automated test suite
-└── README.md
-```
-
-## Testing
+| Mode | Location |
+|------|----------|
+| Linux | `/var/tmp/server-setup/state` |
+| macOS | `~/.server-setup/state` |
 
 ```bash
-./test.sh syntax     # Syntax check all scripts
-./test.sh cli        # CLI flag tests
-./test.sh config     # Config file validation
-./test.sh docker     # Docker CLI tests
-./test.sh local      # All local tests + dry-run (needs sudo)
-./test.sh ubuntu     # Test in Ubuntu container
-./test.sh rocky      # Test in Rocky Linux container
-./test.sh all        # Full suite including all Docker containers
+# Resume an interrupted install — just re-run the same command
+sudo ./server-setup.sh --non-interactive
+
+# Start completely fresh
+sudo ./server-setup.sh --clear-state
 ```
+
+---
 
 ## Supported Platforms
 
-| Platform | Package Manager | PHP Repo | Firewall |
-|----------|----------------|----------|----------|
+### Native mode
+
+| Platform | Package Manager | PHP Source | Firewall |
+|----------|----------------|------------|----------|
 | Ubuntu / Debian | apt | ondrej/php PPA | ufw |
 | CentOS / RHEL / Rocky / AlmaLinux | dnf / yum | Remi | firewalld |
 | Fedora | dnf | Remi | firewalld |
 | macOS | Homebrew | Homebrew | pf |
 
-**Docker mode** works on any platform with Docker Engine and the Compose plugin.
+### Docker mode
 
-## Requirements
+Any OS that runs Docker Engine 20.10+ with the Compose v2 plugin — Linux, macOS, Windows (WSL2).
 
-**Native mode:**
-- Debian-family or RHEL-family Linux with root access, or macOS with Homebrew
-- `bash` 4.0+, `curl`, `openssl`
+---
 
-**Docker mode:**
-- Docker Engine 20.10+
-- Docker Compose v2 (the `docker compose` plugin)
+## Testing
 
-## Notes
+Run the automated test suite:
 
-- Always test in a non-production environment first
-- Back up existing configurations before running
-- Review the dry-run output before a real install: `sudo ./server-setup.sh --dry-run`
-- Docker mode is ideal for development environments and quick prototyping
-- Native mode is recommended for production servers where you need full OS-level control
+```bash
+./test.sh              # Run all tests (syntax + CLI + config + Docker CLI + containers)
+./test.sh syntax       # Syntax-check all shell scripts
+./test.sh cli          # Test CLI flag parsing
+./test.sh config       # Validate config files
+./test.sh docker       # Test Docker CLI flags
+./test.sh local        # All local tests + sudo dry-run
+./test.sh ubuntu       # Dry-run in Ubuntu Docker container
+./test.sh debian       # Dry-run in Debian Docker container
+./test.sh rocky        # Dry-run in Rocky Linux container
+./test.sh alma         # Dry-run in AlmaLinux container
+./test.sh fedora       # Dry-run in Fedora container
+```
+
+---
+
+## Project Structure
+
+```
+server-setup/
+│
+├── server-setup.sh              # Main entry point — sources everything, dispatches actions
+│
+├── config/
+│   ├── default.conf             # Default values for all options
+│   └── example.conf             # Documented template — copy and customize
+│
+├── lib/                         # Core libraries (sourced by server-setup.sh)
+│   ├── common.sh                # Logging, error traps, state management, passwords
+│   ├── platform.sh              # OS/arch detection, package manager abstraction
+│   ├── config.sh                # Config file parsing, env var overrides
+│   └── cli.sh                   # CLI argument parsing
+│
+├── modules/                     # Feature modules (sourced by server-setup.sh)
+│   ├── php.sh                   # Multi-version PHP + extensions
+│   ├── webserver.sh             # Apache / NGINX installation
+│   ├── database.sh              # MariaDB installation + secure setup
+│   ├── phpmyadmin.sh            # phpMyAdmin download + web server config
+│   ├── ssl.sh                   # Let's Encrypt via certbot
+│   ├── firewall.sh              # ufw (Debian) / firewalld (RHEL) / pf (macOS)
+│   ├── extras.sh                # Composer, Redis, Node.js, Elasticsearch
+│   ├── vhost.sh                 # Virtual host creation wizard
+│   └── docker.sh                # Docker Compose generation + lifecycle
+│
+├── uninstall.sh                 # Reverse-order removal (native + Docker aware)
+├── update.sh                    # Component updates (native + Docker aware)
+├── test.sh                      # Automated test suite
+└── README.md
+```
+
+---
+
+## Important Notes
+
+- **Always dry-run first**: `sudo ./server-setup.sh --dry-run` before any real install
+- **Back up** existing server configurations before running on a production machine
+- **Docker mode** is ideal for development, local testing, and quick prototyping
+- **Native mode** is recommended for production servers where you need full OS-level control
+- **Credentials** are auto-generated and stored securely — review them after install
