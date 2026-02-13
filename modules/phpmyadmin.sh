@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # modules/phpmyadmin.sh — phpMyAdmin installation and web server configuration
 
 install_phpmyadmin() {

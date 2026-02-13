@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # modules/database.sh — MariaDB installation and secure setup
 
 install_database() {

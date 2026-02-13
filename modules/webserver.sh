@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # modules/webserver.sh — Apache/NGINX installation and configuration
 
 install_webserver() {

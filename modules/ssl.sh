@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # modules/ssl.sh — Let's Encrypt SSL via certbot
 
 install_ssl() {

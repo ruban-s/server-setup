@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # platform.sh — OS/arch detection, distro family, and package manager wrappers
 
 # Global set during init

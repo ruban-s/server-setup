@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # update.sh — Update installed components
 # Sourced by server-setup.sh when --update is passed.
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # config.sh — Config file parsing with environment variable overrides
 
 # Config defaults (overridden by file, then by env vars)

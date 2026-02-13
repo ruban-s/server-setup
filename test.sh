@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # test.sh — Automated testing across distros via Docker
 # Usage: ./test.sh [distro|all|syntax|local]
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # modules/php.sh — Multi-version PHP installation with extensions
 
 install_php() {

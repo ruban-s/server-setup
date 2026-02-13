@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # modules/vhost.sh — Virtual host creation wizard
 
 create_vhost() {

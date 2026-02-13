@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # modules/firewall.sh — Firewall configuration (ufw/firewalld on Linux, pf on macOS)
 
 install_firewall() {

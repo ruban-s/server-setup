@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # modules/extras.sh — Composer, Redis, Node.js, Elasticsearch
 
 install_extras() {

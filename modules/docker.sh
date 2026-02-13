@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # docker.sh — Docker Compose stack generation and management
 
 DOCKER_OUTPUT_DIR="${SCRIPT_DIR}/docker-output"

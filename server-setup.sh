@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # server-setup.sh — Modular LAMP/LEMP stack installer
 # Supports Ubuntu/Debian, RHEL/CentOS/Rocky/AlmaLinux/Fedora, and macOS
 # Usage: sudo ./server-setup.sh [OPTIONS]

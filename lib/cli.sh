@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # cli.sh — CLI argument parsing
 
 SS_CONFIG_FILE=""

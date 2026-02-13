@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # common.sh — Logging, traps, validation, password handling, state management
 
 # Strict mode

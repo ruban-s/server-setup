@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # uninstall.sh — Clean removal of installed components
 # Sourced by server-setup.sh when --uninstall is passed.
 
