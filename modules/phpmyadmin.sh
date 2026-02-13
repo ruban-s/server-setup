@@ -151,29 +151,35 @@ _install_phpmyadmin_rhel() {
     if [[ -d "$pma_dir" ]]; then
         log_info "phpMyAdmin already exists at $pma_dir. Skipping download."
     else
-        log_info "Downloading phpMyAdmin (not in RHEL repos)..."
-        local tmpdir
-        tmpdir=$(mktemp -d)
-        run_cmd curl -fsSL -o "${tmpdir}/phpmyadmin.tar.gz" \
-            "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz"
+        if [[ "$SS_DRY_RUN" == "true" ]]; then
+            log_info "[DRY RUN] Would download and install phpMyAdmin to $pma_dir"
+        else
+            log_info "Downloading phpMyAdmin (not in RHEL repos)..."
+            local tmpdir
+            tmpdir=$(mktemp -d)
+            curl -fsSL -o "${tmpdir}/phpmyadmin.tar.gz" \
+                "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz"
 
-        if [[ ! -s "${tmpdir}/phpmyadmin.tar.gz" ]]; then
-            log_error "phpMyAdmin download failed or is empty."
+            if [[ ! -s "${tmpdir}/phpmyadmin.tar.gz" ]]; then
+                log_error "phpMyAdmin download failed or is empty."
+                rm -rf "$tmpdir"
+                exit 1
+            fi
+
+            tar -xzf "${tmpdir}/phpmyadmin.tar.gz" -C "$tmpdir"
+            mv "${tmpdir}"/phpMyAdmin-* "$pma_dir"
             rm -rf "$tmpdir"
-            exit 1
+
+            # Create tmp directory for phpMyAdmin
+            mkdir -p "${pma_dir}/tmp"
+            chmod 777 "${pma_dir}/tmp"
         fi
-
-        run_cmd tar -xzf "${tmpdir}/phpmyadmin.tar.gz" -C "$tmpdir"
-        run_cmd mv "${tmpdir}"/phpMyAdmin-* "$pma_dir"
-        rm -rf "$tmpdir"
-
-        # Create tmp directory for phpMyAdmin
-        mkdir -p "${pma_dir}/tmp"
-        chmod 777 "${pma_dir}/tmp"
     fi
 
-    # Generate config with blowfish secret
-    _generate_phpmyadmin_config "$pma_dir"
+    # Generate config with blowfish secret (skip in dry-run)
+    if [[ "$SS_DRY_RUN" != "true" ]]; then
+        _generate_phpmyadmin_config "$pma_dir"
+    fi
 
     if [[ "$web_server" == "apache" ]]; then
         _configure_phpmyadmin_apache_rhel "$highest_version"
@@ -289,13 +295,15 @@ _install_phpmyadmin_macos() {
 
     if [[ -d "$pma_dir" ]]; then
         log_info "phpMyAdmin already exists at $pma_dir. Skipping download."
+    elif [[ "$SS_DRY_RUN" == "true" ]]; then
+        log_info "[DRY RUN] Would download and install phpMyAdmin to $pma_dir"
     else
         log_info "Downloading phpMyAdmin..."
         mkdir -p "$web_root"
 
         local tmpdir
         tmpdir=$(mktemp -d)
-        run_cmd curl -fsSL -o "${tmpdir}/phpmyadmin.tar.gz" \
+        curl -fsSL -o "${tmpdir}/phpmyadmin.tar.gz" \
             "https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz"
 
         if [[ ! -s "${tmpdir}/phpmyadmin.tar.gz" ]]; then
@@ -304,10 +312,12 @@ _install_phpmyadmin_macos() {
             exit 1
         fi
 
-        run_cmd tar -xzf "${tmpdir}/phpmyadmin.tar.gz" -C "$tmpdir"
-        run_cmd mv "${tmpdir}"/phpMyAdmin-* "$pma_dir"
+        tar -xzf "${tmpdir}/phpmyadmin.tar.gz" -C "$tmpdir"
+        mv "${tmpdir}"/phpMyAdmin-* "$pma_dir"
         rm -rf "$tmpdir"
     fi
 
-    _generate_phpmyadmin_config "$pma_dir"
+    if [[ "$SS_DRY_RUN" != "true" ]]; then
+        _generate_phpmyadmin_config "$pma_dir"
+    fi
 }

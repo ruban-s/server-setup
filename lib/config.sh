@@ -96,20 +96,20 @@ apply_defaults() {
 
 # Apply environment variable overrides (env vars take highest priority)
 apply_env_overrides() {
-    [[ -n "${PHP_VERSIONS:-}" ]]          && CFG_PHP_VERSIONS="$PHP_VERSIONS"
-    [[ -n "${PHP_EXTENSIONS:-}" ]]        && CFG_PHP_EXTENSIONS="$PHP_EXTENSIONS"
-    [[ -n "${WEB_SERVER:-}" ]]            && CFG_WEB_SERVER="$WEB_SERVER"
-    [[ -n "${INSTALL_PHPMYADMIN:-}" ]]    && CFG_INSTALL_PHPMYADMIN="$INSTALL_PHPMYADMIN"
-    [[ -n "${ENABLE_SSL:-}" ]]            && CFG_ENABLE_SSL="$ENABLE_SSL"
-    [[ -n "${SSL_EMAIL:-}" ]]             && CFG_SSL_EMAIL="$SSL_EMAIL"
-    [[ -n "${SSL_DOMAINS:-}" ]]           && CFG_SSL_DOMAINS="$SSL_DOMAINS"
-    [[ -n "${ENABLE_FIREWALL:-}" ]]       && CFG_ENABLE_FIREWALL="$ENABLE_FIREWALL"
-    [[ -n "${FIREWALL_PORTS:-}" ]]        && CFG_FIREWALL_PORTS="$FIREWALL_PORTS"
-    [[ -n "${INSTALL_COMPOSER:-}" ]]      && CFG_INSTALL_COMPOSER="$INSTALL_COMPOSER"
-    [[ -n "${INSTALL_REDIS:-}" ]]         && CFG_INSTALL_REDIS="$INSTALL_REDIS"
-    [[ -n "${INSTALL_NODEJS:-}" ]]        && CFG_INSTALL_NODEJS="$INSTALL_NODEJS"
-    [[ -n "${NODEJS_VERSION:-}" ]]        && CFG_NODEJS_VERSION="$NODEJS_VERSION"
-    [[ -n "${INSTALL_ELASTICSEARCH:-}" ]] && CFG_INSTALL_ELASTICSEARCH="$INSTALL_ELASTICSEARCH"
+    [[ -n "${PHP_VERSIONS:-}" ]]          && CFG_PHP_VERSIONS="$PHP_VERSIONS"          || true
+    [[ -n "${PHP_EXTENSIONS:-}" ]]        && CFG_PHP_EXTENSIONS="$PHP_EXTENSIONS"        || true
+    [[ -n "${WEB_SERVER:-}" ]]            && CFG_WEB_SERVER="$WEB_SERVER"                || true
+    [[ -n "${INSTALL_PHPMYADMIN:-}" ]]    && CFG_INSTALL_PHPMYADMIN="$INSTALL_PHPMYADMIN" || true
+    [[ -n "${ENABLE_SSL:-}" ]]            && CFG_ENABLE_SSL="$ENABLE_SSL"                || true
+    [[ -n "${SSL_EMAIL:-}" ]]             && CFG_SSL_EMAIL="$SSL_EMAIL"                  || true
+    [[ -n "${SSL_DOMAINS:-}" ]]           && CFG_SSL_DOMAINS="$SSL_DOMAINS"              || true
+    [[ -n "${ENABLE_FIREWALL:-}" ]]       && CFG_ENABLE_FIREWALL="$ENABLE_FIREWALL"      || true
+    [[ -n "${FIREWALL_PORTS:-}" ]]        && CFG_FIREWALL_PORTS="$FIREWALL_PORTS"        || true
+    [[ -n "${INSTALL_COMPOSER:-}" ]]      && CFG_INSTALL_COMPOSER="$INSTALL_COMPOSER"    || true
+    [[ -n "${INSTALL_REDIS:-}" ]]         && CFG_INSTALL_REDIS="$INSTALL_REDIS"          || true
+    [[ -n "${INSTALL_NODEJS:-}" ]]        && CFG_INSTALL_NODEJS="$INSTALL_NODEJS"        || true
+    [[ -n "${NODEJS_VERSION:-}" ]]        && CFG_NODEJS_VERSION="$NODEJS_VERSION"        || true
+    [[ -n "${INSTALL_ELASTICSEARCH:-}" ]] && CFG_INSTALL_ELASTICSEARCH="$INSTALL_ELASTICSEARCH" || true
 }
 
 init_config() {
